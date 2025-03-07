@@ -10,6 +10,8 @@ An accelerometer-based gait monitoring application designed specifically for Par
 - **Visual Analysis Tools**: Charts for velocity trends and acceleration patterns
 - **Step History Tracking**: Records detailed information about each step for post-hoc analysis
 - **Data Export**: CSV export functionality for sharing with healthcare professionals
+- ![1741300654341 (1)](https://github.com/user-attachments/assets/fb1168e5-2368-4e98-abdd-b861559e54f8)
+
 
 ## Technical Implementation
 
