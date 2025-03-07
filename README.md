@@ -54,6 +54,76 @@ Key metrics include:
 - **Haptic**: Customized vibration patterns (rapid pulses for fast walking, slow pulses for slow walking)
 - **Visual**: Color-coded alerts and detailed step history
 
+## Technical Implementation
+
+### Step Detection Algorithm
+
+Our algorithm employs a sophisticated approach optimized for Parkinson's gait patterns:
+
+1. **Pre-processing and Signal Conditioning**:
+   - **Sampling**: Raw accelerometer data is collected at 10Hz (SAMPLING_INTERVAL = 0.1s)
+   - **Magnitude Calculation**: 3D acceleration vector magnitude is computed: √(x² + y² + z²)
+   - **Exponential Smoothing**: Noise reduction using exponential smoothing: Smoothed = α * Current + (1-α) * Previous, where α = 0.1
+   - **Data Buffering**: Implementation of a future window buffer (1.0s) to enable look-ahead analysis for more accurate peak detection
+
+2. **Dynamic Threshold Computation**:
+   - **Rolling Window**: Maintains a window of recent acceleration values (windowSize = 15)
+   - **Statistical Analysis**: Calculates mean and standard deviation of the rolling window
+   - **Adaptive Threshold**: Sets threshold as: mean + (stdDev * 0.5)
+   - **Minimum Threshold**: Enforces a minimum threshold (minStepThreshold = 7.5) to prevent false positives during very slow movement
+
+3. **Peak Detection and Verification**:
+   - **Primary Condition**: Identifies points where smoothed acceleration exceeds the dynamic threshold
+   - **Neighborhood Analysis**: Verifies that the point is higher than surrounding points (2 before, 2 after)
+   - **Future Window Optimization**: Searches ahead in the buffer for potentially higher peaks that may represent the true step
+   - **Temporal Filtering**: Enforces minimum time between steps (minStepInterval = 0.4s) to prevent double-counting
+
+4. **False Positive Rejection**:
+   - **Confirmation Window**: Analyzes acceleration patterns around detected peaks
+   - **Shape Verification**: Confirms characteristic acceleration shape of a true step
+   - **Consistency Check**: Compares with patterns of previously detected steps
+
+### Step Length Calculation Algorithm
+
+The step length calculation builds on established biomechanical models:
+
+1. **Kim's Step Length Formula**:
+   - **Base Equation**: Step Length = k * ∛(mean absolute acceleration)
+   - **Coefficient**: k = 0.26 (derived from empirical studies on walking biomechanics)
+
+2. **Implementation Process**:
+   ```
+   For each detected step:
+     1. Identify window of acceleration data around the step (±5 samples)
+     2. Calculate magnitude of acceleration for each sample in window
+     3. Compute mean absolute acceleration across the window
+     4. Apply Kim's formula: stepLength = k * Math.cbrt(meanAbsAcceleration)
+     5. Store step length for statistical analysis
+   ```
+
+3. **Velocity Computation**:
+   - **Time Interval**: Calculate time elapsed since previous step
+   - **Velocity Formula**: velocity = stepLength / stepInterval
+   - **Smoothing**: Optional exponential smoothing to reduce noise in velocity estimates
+
+4. **Gait Parameter Analysis**:
+   - **Statistical Processing**: Calculate mean, standard deviation, and Z-scores
+   - **Anomaly Detection**: Identify steps with Z-scores beyond ±1.5 as abnormal
+   - **Pattern Recognition**: Classify based on combined parameters (length, timing, acceleration profile)
+
+### Algorithm Calibration and Parameters
+
+The detection algorithm includes several tunable parameters:
+
+- **minStepInterval = 0.4s**: Minimum time between consecutive steps
+- **minStepThreshold = 7.5**: Minimum acceleration peak to be considered a step
+- **smoothingFactor = 0.1**: Exponential smoothing coefficient
+- **windowSize = 15**: Size of rolling window for dynamic threshold
+- **FUTURE_WINDOW = 1.0s**: Look-ahead time window for improved peak detection
+
+These parameters were optimized based on testing with normal and Parkinsonian gait patterns, but may be adjusted for different populations or walking conditions.
+
+
 ## Development Setup
 
 1. Clone the repository
